@@ -1,40 +1,83 @@
-Recursive bilateral filtering (developed by Qingxiong Yang) is pretty fast compared with most edge-preserving filtering methods
-- computational complexity is linear in both input size and dimensionality:
-- takes about 43 ms to process a one megapixel color image (i7 1.8GHz & 4GB mem)
-- about 18x faster than *Fast high-dimensional filtering using the permutohedral lattice*
-- about 86x faster than *Gaussian kd-trees for fast high-dimensional filtering*
+# GPU-Accelerated Recursive Bilateral Filtering
 
-## Results
-<table>
-<tr>
-<td><img src="https://cloud.githubusercontent.com/assets/2270240/26041579/7d7c034e-3960-11e7-9549-912685043e39.jpg" width="300px"><br/><p align="center">Original Image</p></td>
-<td><img src="https://cloud.githubusercontent.com/assets/2270240/26041586/8b4afb42-3960-11e7-9bd8-62bbb924f1e9.jpg" width="300px"><br/><p align="center">OpenCV's BF (896ms)</p></td>
-<td><img src="https://cloud.githubusercontent.com/assets/2270240/26041590/8d08c16c-3960-11e7-8a0c-95a77d6d9085.jpg" width="300px"><br/><p align="center">RecursiveBF (18ms)</p></td>
-</tr>
-<tr>
-<td></td>
-<td><img src="https://cloud.githubusercontent.com/assets/2270240/26041583/86ea7b22-3960-11e7-8ded-5109b76966ca.jpg" width="300px"><br/><p align="center">Gaussian Blur</p></td>
-<td><img src="https://cloud.githubusercontent.com/assets/2270240/26041584/88dfc9b4-3960-11e7-8c9d-2634eac098d0.jpg" width="300px"><br/><p align="center">Median Blur</p></td>
-</tr></table>
+This project implements a GPU-accelerated version of Recursive Bilateral Filtering (RBF), originally developed by Qingxiong Yang. The implementation significantly improves performance by utilizing CUDA for parallel processing on NVIDIA GPUs.
 
-For more details of the algorithm, please refer to the original paper
+## Overview
 
-    @inproceedings{yang2012recursive,
-        title={Recursive bilateral filtering},
-        author={Yang, Qingxiong},
-        booktitle={European Conference on Computer Vision},
-        pages={399--413},
-        year={2012},
-        organization={Springer}
-    }
+Recursive bilateral filtering is an edge-preserving filtering method that:
+- Has linear computational complexity in both input size and dimensionality
+- Preserves edges while smoothing the image
+- Is significantly faster than traditional bilateral filtering methods
 
-Optionally, you can cite this repo
+## Performance Results
 
-    @misc{ming2017recursive,
-        author = {Ming Yang},
-        title = {A lightweight C++ library for recursive bilateral filtering},
-        year = {2017},
-        publisher = {GitHub},
-        journal = {GitHub repository},
-        howpublished = {\url{https://github.com/ufoym/RecursiveBF}}
-    }
+We tested the implementation on various image sizes, comparing three different approaches:
+
+1. CPU External Buffer
+2. GPU Naive Kernel
+3. GPU Refactored Kernel
+
+### Performance Comparison (Average Times)
+
+| Image Size | CPU External | GPU Naive | GPU Refactored | Speedup (vs CPU) |
+|------------|--------------|-----------|----------------|------------------|
+| 5760×3840  | 2.48s        | 1.50s     | 0.16s         | 15.5x           |
+| 6016×4016  | 2.70s        | 1.62s     | 0.15s         | 18.0x           |
+| 4288×2848  | 1.36s        | 0.83s     | 0.12s         | 11.3x           |
+| 10800×5400 | 6.60s        | 3.66s     | 0.24s         | 27.5x           |
+| 12039×4816 | 6.46s        | 3.62s     | 0.24s         | 26.9x           |
+| 14805×4022 | 6.65s        | 3.77s     | 0.28s         | 23.8x           |
+| 14524×7946 | 12.89s       | 7.80s     | 0.54s         | 23.9x           |
+| 13347×7162 | 10.66s       | 6.04s     | 0.44s         | 24.2x           |
+| 20919×6260 | 14.74s       | 8.26s     | 0.50s         | 29.5x           |
+| 16376×5611 | 10.25s       | 5.99s     | 0.44s         | 23.3x           |
+
+The GPU-accelerated implementation shows significant performance improvements:
+- Average speedup of 22.4x compared to CPU implementation
+- Refactored GPU kernel is approximately 5-10x faster than the naive GPU implementation
+- Performance scales well with image size
+
+## Implementation Details
+
+The project includes three main implementations:
+
+1. **CPU External Buffer**: Original CPU implementation with external buffer
+2. **GPU Naive Kernel**: Initial GPU implementation with basic CUDA optimizations
+3. **GPU Refactored Kernel**: Optimized GPU implementation with:
+   - Efficient memory management
+   - Optimized kernel design
+   - Better thread utilization
+   - Reduced memory transfers
+
+## Requirements
+
+- CUDA-capable NVIDIA GPU
+- CUDA Toolkit
+- C++ compiler with C++11 support
+
+## Building and Running
+
+```bash
+cd example
+make
+./test.sh
+```
+
+## Citation
+
+If you use this implementation in your research, please cite:
+
+```bibtex
+@inproceedings{yang2012recursive,
+    title={Recursive bilateral filtering},
+    author={Yang, Qingxiong},
+    booktitle={European Conference on Computer Vision},
+    pages={399--413},
+    year={2012},
+    organization={Springer}
+}
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
